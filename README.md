@@ -68,29 +68,6 @@ npm run preview
   - Password: `user123`
   - Access: Read-only access
 
-## Project Structure
-
-```
-├── index.html          # Main HTML file
-├── script.js           # Main application logic
-├── services.js         # CRUD services and API calls
-├── style.css           # Styles
-├── db.json            # JSON Server database
-├── users.html         # Users list template
-├── newuser.html       # User form template
-├── about.html         # About page template
-├── package.json       # Dependencies and scripts
-├── vite.config.js     # Vite configuration
-└── README.md          # Documentation
-```
-
-## API Endpoints
-
-- `GET /users` - Get all users
-- `GET /users/:id` - Get user by ID
-- `POST /users` - Create new user
-- `PUT /users/:id` - Update user
-- `DELETE /users/:id` - Delete user
 
 ## User Roles
 
