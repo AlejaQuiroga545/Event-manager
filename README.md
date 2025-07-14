@@ -1,6 +1,6 @@
-# Student Manager CRUD Application
+# Event Manager 
 
-A modern Single Page Application (SPA) for managing student records with authentication and role-based access control.
+A modern Single Page Application (SPA) for managing events with authentication and role-based access control.
 
 ## Features
 
@@ -10,8 +10,6 @@ A modern Single Page Application (SPA) for managing student records with authent
 - 🎨 **Modern UI** with responsive design
 - 🚨 **SweetAlert2 Integration** for user feedback
 - 📊 **Data Validation** and error handling
-- 🔍 **Search and Filter** capabilities
-- 📤 **Export to CSV** functionality
 
 ## Tech Stack
 
@@ -96,25 +94,13 @@ npm run preview
 ## User Roles
 
 ### Administrator
-- View all students
-- Create new students
-- Edit existing students
-- Delete students
+- View all events
+- Create new events
+- Edit existing events
+- Delete events
 - Access to all navigation items
 
 ### Regular User
-- View students list only
+- Inscribe on events
+- View event list only
 - No create/edit/delete permissions
-- Limited navigation access
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## License
-
-MIT License
