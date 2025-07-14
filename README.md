@@ -30,30 +30,31 @@ A modern Single Page Application (SPA) for managing events with authentication a
 ## Development
 
 Start both the JSON server and Vite dev server:
-\`\`\`bash
+```bash
 npm start
-\`\`\`
+```
 
-Or run them separately:
-\`\`\`bash
 # Start JSON server (port 3000)
+```bash
 npm run server
+```
 
 # Start Vite dev server (port 5173)
+```bash
 npm run dev
-\`\`\`
+```
 
 ## Build
 
 Build for production:
-\`\`\`bash
+```bash
 npm run build
-\`\`\`
+```
 
 Preview production build:
-\`\`\`bash
+```bash
 npm run preview
-\`\`\`
+```
 
 ## Default Credentials
 
@@ -69,7 +70,7 @@ npm run preview
 
 ## Project Structure
 
-\`\`\`
+```
 ├── index.html          # Main HTML file
 ├── script.js           # Main application logic
 ├── services.js         # CRUD services and API calls
@@ -81,7 +82,7 @@ npm run preview
 ├── package.json       # Dependencies and scripts
 ├── vite.config.js     # Vite configuration
 └── README.md          # Documentation
-\`\`\`
+```
 
 ## API Endpoints
 
