@@ -1,13 +1,15 @@
 // Agregar las importaciones al inicio del archivo
 import {
-  getAllUsers,
-  getUserById,
-  createUser,
-  updateUser,
-  deleteUser,
-  inscribeEvent,
-  initializeUserIds,
-  validateUserData,
+  getAllEvents,
+  getEventById,
+  createEvent,
+  updateEvent,
+  deleteEvent,
+  enrollInEvent,
+  initializeEventIds,
+  validateEventData,
+  getRegisteredUsers,
+  registerUser,
 } from "./services.js"
 
 // SISTEMA DE AUTENTICACIÓN
@@ -23,21 +25,22 @@ let currentUser = null // Usuario actual
 // Variable para almacenar el ID del usuario actual
 // Se inicializa en null y se actualizará al iniciar sesión
 // Se utilizará para identificar al usuario en las operaciones CRUD
-let nextUserId = 0 // Variable para controlar el próximo ID
+let nextEventId = 0 // Variable para controlar el próximo ID del evento
 
 // Importación de Swal
 const Swal = window.Swal
 
 // Inicializar la aplicación
 document.addEventListener("DOMContentLoaded", async () => {
-  await initializeUserIds() // Inicializar el sistema de IDs
+  await initializeEventIds() // Inicializar el sistema de IDs
   checkAuthStatus() // Verificar el estado de autenticación al cargar la página
-  setupLoginForm() // Configurar el formulario de login
+  setupAuthForms() // Configurar el formulario de login y registro
   setupLogout() // Configurar el botón de logout
 })
 
 // Verificar estado de autenticación
-function checkAuthStatus() { // Verificar si hay un usuario guardado en localStorage
+function checkAuthStatus() {
+  // Verificar si hay un usuario guardado en localStorage
   // Si hay un usuario guardado, mostrar la aplicación principal
   // Si no hay usuario guardado, mostrar la pantalla de login
   // Esto permite que el usuario permanezca autenticado incluso al recargar la página
@@ -63,20 +66,44 @@ function showMainApp() {
   document.getElementById("login-screen").style.display = "none"
   document.getElementById("main-app").style.display = "flex"
   updateUserInterface()
-  navigate("/users") // Navegar a la página de usuarios por defecto
+  navigate("/events") // Navegar a la página de eventos por defecto
 }
 
-// Configurar formulario de login
-function setupLoginForm() {
+// Configurar formularios de autenticación (login y registro)
+function setupAuthForms() {
   const loginForm = document.getElementById("login-form")
+  const registerForm = document.getElementById("register-form")
+  const showRegisterLink = document.getElementById("show-register")
+  const showLoginLink = document.getElementById("show-login")
+
+  // Alternar entre formularios de login y registro
+  showRegisterLink.addEventListener("click", (e) => {
+    e.preventDefault()
+    loginForm.style.display = "none"
+    registerForm.style.display = "block"
+  })
+
+  showLoginLink.addEventListener("click", (e) => {
+    e.preventDefault()
+    registerForm.style.display = "none"
+    loginForm.style.display = "block"
+  })
+
+  // Manejar el envío del formulario de login
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault()
 
     const username = document.getElementById("username").value
     const password = document.getElementById("password").value
 
-    // Validar credenciales
-    const user = USERS.find((u) => u.username === username && u.password === password)
+    // Validar credenciales contra usuarios predefinidos y usuarios registrados
+    let user = USERS.find((u) => u.username === username && u.password === password)
+
+    if (!user) {
+      // Verificar usuarios registrados
+      const registeredUsers = await getRegisteredUsers()
+      user = registeredUsers.find((u) => u.username === username && u.password === password)
+    }
 
     if (user) {
       currentUser = user
@@ -84,8 +111,8 @@ function setupLoginForm() {
 
       await Swal.fire({
         icon: "success",
-        title: "Login Successful!",
-        text: `Welcome ${user.name}`,
+        title: "¡Inicio de sesión exitoso!",
+        text: `Bienvenido ${user.name}`,
         timer: 1500,
         showConfirmButton: false,
       })
@@ -94,8 +121,8 @@ function setupLoginForm() {
     } else {
       await Swal.fire({
         icon: "error",
-        title: "Login Failed",
-        text: "Invalid username or password",
+        title: "Error de inicio de sesión",
+        text: "Usuario o contraseña inválidos",
         confirmButtonColor: "#667eea",
       })
     }
@@ -103,19 +130,77 @@ function setupLoginForm() {
     // Limpiar formulario
     loginForm.reset()
   })
+
+  // Manejar el envío del formulario de registro
+  registerForm.addEventListener("submit", async (e) => {
+    e.preventDefault()
+
+    const name = document.getElementById("reg-name").value
+    const username = document.getElementById("reg-username").value
+    const password = document.getElementById("reg-password").value
+
+    // Verificar si el nombre de usuario ya existe
+    const existingUser = USERS.find((u) => u.username === username)
+    const registeredUsers = await getRegisteredUsers()
+    const existingRegisteredUser = registeredUsers.find((u) => u.username === username)
+
+    if (existingUser || existingRegisteredUser) {
+      await Swal.fire({
+        icon: "error",
+        title: "Error de registro",
+        text: "El nombre de usuario ya existe",
+        confirmButtonColor: "#667eea",
+      })
+      return
+    }
+
+    // Registrar nuevo usuario
+    const newUser = {
+      name,
+      username,
+      password,
+      role: "user", // Todos los usuarios registrados son usuarios regulares
+      enrolledEvents: [], // Array para rastrear eventos inscritos
+    }
+
+    try {
+      await registerUser(newUser)
+
+      await Swal.fire({
+        icon: "success",
+        title: "¡Registro exitoso!",
+        text: "Ahora puedes iniciar sesión",
+        timer: 1500,
+        showConfirmButton: false,
+      })
+
+      // Volver al formulario de login
+      registerForm.style.display = "none"
+      loginForm.style.display = "block"
+      registerForm.reset()
+    } catch (error) {
+      await Swal.fire({
+        icon: "error",
+        title: "Error de registro",
+        text: "No se pudo registrar el usuario",
+        confirmButtonColor: "#667eea",
+      })
+    }
+  })
 }
 
 // Configurar logout
 function setupLogout() {
   document.getElementById("logout-btn").addEventListener("click", async () => {
     const result = await Swal.fire({
-      title: "Are you sure?",
-      text: "Do you want to logout?",
+      title: "¿Estás seguro?",
+      text: "¿Quieres cerrar sesión?",
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#e74c3c",
       cancelButtonColor: "#667eea",
-      confirmButtonText: "Yes, logout",
+      confirmButtonText: "Sí, cerrar sesión",
+      cancelButtonText: "Cancelar",
     })
 
     if (result.isConfirmed) {
@@ -124,7 +209,7 @@ function setupLogout() {
 
       await Swal.fire({
         icon: "success",
-        title: "Logged out successfully",
+        title: "Sesión cerrada exitosamente",
         timer: 1000,
         showConfirmButton: false,
       })
@@ -144,23 +229,27 @@ function updateUserInterface() {
   document.getElementById("user-role").className = `role-badge ${currentUser.role}`
 
   // Controlar acceso según el rol
-  const newUserLink = document.getElementById("new-user-link")
+  const newEventLink = document.getElementById("new-event-link")
+  const myEventsLink = document.getElementById("my-events-link")
+
   if (currentUser.role === "admin") {
-    newUserLink.style.display = "flex"
+    newEventLink.style.display = "flex"
+    myEventsLink.style.display = "none" // Admins no necesitan "Mis Eventos"
   } else {
-    newUserLink.style.display = "none"
+    newEventLink.style.display = "none"
+    myEventsLink.style.display = "flex"
   }
 }
-
 
 // SECCIÓN DE RUTAS Y NAVEGACIÓN (SPA)
 // ===================================
 
+// Actualizar las rutas para que coincidan con los archivos HTML existentes
 const routes = {
-  "/": "./users.html",
-  "/users": "./users.html",
-  "/newuser": "./newuser.html",
-  "/about": "./about.html",
+  "/": "./users.html", // Usar el archivo existente temporalmente
+  "/events": "./users.html", // Reutilizar users.html como events.html
+  "/new-event": "./newuser.html", // Reutilizar newuser.html como new-event.html
+  "/my-events": "./my-events.html", // Crear este archivo
 }
 
 // Navegación
@@ -168,12 +257,12 @@ document.body.addEventListener("click", (e) => {
   if (e.target.matches("[data-link]")) {
     e.preventDefault()
 
-    // Verificar permisos para nueva usuario
-    if (e.target.getAttribute("href") === "/newuser" && currentUser.role !== "admin") {
+    // Verificar permisos para nueva creación de evento
+    if (e.target.getAttribute("href") === "/new-event" && currentUser.role !== "admin") {
       Swal.fire({
         icon: "error",
-        title: "Access Denied",
-        text: "You do not have permission to access this feature",
+        title: "Acceso Denegado",
+        text: "No tienes permisos para acceder a esta función",
         confirmButtonColor: "#667eea",
       })
       return
@@ -183,6 +272,7 @@ document.body.addEventListener("click", (e) => {
   }
 })
 
+// En la función navigate, actualizar la lógica de inicialización
 async function navigate(pathname) {
   // Actualizar navegación activa
   document.querySelectorAll("[data-link]").forEach((link) => {
@@ -193,64 +283,74 @@ async function navigate(pathname) {
   const route = routes[pathname]
   const html = await fetch(route).then((res) => res.text())
   document.getElementById("content").innerHTML = html
-  history.pushState({}, "", pathname)
 
-  if (pathname === "/users") {
-    renderUsers()
+  // Inicializar funcionalidad específica de la página
+  if (pathname === "/events" || pathname === "/") {
+    renderEvents()
   }
 
-  if (pathname === "/newuser") {
-    setUpUserForm()
+  if (pathname === "/new-event") {
+    setupEventForm()
+  }
+
+  if (pathname === "/my-events") {
+    renderMyEvents()
   }
 }
 
+// Manejar botones de retroceso/avance del navegador
 window.addEventListener("popstate", () => navigate(location.pathname))
 
 // OPERACIONES CRUD
 // ================
 
-// READ: Mostrar usuarios
-async function renderUsers() {
+// READ: Mostrar eventos
+async function renderEvents() {
   try {
-    const users = await getAllUsers()
+    const events = await getAllEvents()
 
     // Mostrar botón de agregar solo para admin
-    const addBtn = document.getElementById("add-student-btn")
+    const addBtn = document.getElementById("add-event-btn")
     if (currentUser.role === "admin") {
       addBtn.classList.remove("hidden")
-      addBtn.addEventListener("click", () => navigate("/newuser"))
+      addBtn.addEventListener("click", () => navigate("/new-event"))
     }
 
+    // Generar HTML de la tabla basado en el rol del usuario
     const tableHTML = `
     <table>
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Description</th>
-          <th>Capacity</th>
-          <th>Date</th>
-          ${currentUser.role === "admin" ? "<th>Actions</th>" : ""}
+          <th>Nombre</th>
+          <th>Descripción</th>
+          <th>Capacidad</th>
+          <th>Fecha</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
-        ${users
+        ${events
           .map(
-            (user) => `
+            (event) => `
           <tr>
-            <td>${user.name}</td>
-            <td>${user.description}</td>
-            <td>${user.capacity}</td>
-            <td>${user.date}</td>
-            ${
-              currentUser.role === "admin"
-                ? `
+            <td>${event.name}</td>
+            <td>${event.description}</td>
+            <td>${event.capacity}</td>
+            <td>${event.date}</td>
             <td>
-              <button data-id="${user.id}" class="btn-edit">Edit</button>
-              <button data-id="${user.id}" class="btn-delete">Delete</button>
+              ${
+                currentUser.role === "admin"
+                  ? `
+                <button data-id="${event.id}" class="btn-edit">Editar</button>
+                <button data-id="${event.id}" class="btn-delete">Eliminar</button>
+                `
+                  : `
+                <button data-id="${event.id}" class="btn-enroll" ${event.capacity <= 0 ? "disabled" : ""}>
+                  ${event.capacity <= 0 ? "Sold Out" : "Enroll"}
+                </button>
+                `
+              }
             </td>
-            `
-                : ""
-            }
           </tr>
         `,
           )
@@ -259,69 +359,271 @@ async function renderUsers() {
     </table>
     `
 
-    document.getElementById("users-table-container").innerHTML = tableHTML
+    document.getElementById("events-table-container").innerHTML = tableHTML
 
-    // Solo agregar event listeners si es admin
+    // Configurar event listeners basados en el rol del usuario
     if (currentUser.role === "admin") {
       setupDeleteButtons()
       setupEditButtons()
+    } else {
+      setupEnrollButtons()
     }
   } catch (err) {
-    console.error("Error getting users:", err)
+    console.error("Error getting events:", err)
   }
 }
 
-// Configurar botones de eliminar
+// Configurar botones de eliminar para admin
 function setupDeleteButtons() {
   const deleteButtons = document.querySelectorAll(".btn-delete")
   deleteButtons.forEach((button) => {
     button.addEventListener("click", async () => {
-      const userId = button.dataset.id
+      const eventId = button.dataset.id
 
       try {
-        const deleted = await deleteUser(userId)
+        const deleted = await deleteEvent(eventId)
         if (deleted) {
-          renderUsers()
+          renderEvents()
         }
       } catch (err) {
-        console.error(`Error deleting user: ${err}`)
+        console.error(`Error deleting event: ${err}`)
       }
     })
   })
 }
 
-// Configurar botones de editar
+// Configurar botones de editar para admin
 function setupEditButtons() {
   const editButtons = document.querySelectorAll(".btn-edit")
   editButtons.forEach((button) => {
     button.addEventListener("click", async () => {
-      const userId = button.dataset.id
+      const eventId = button.dataset.id
 
       try {
-        const user = await getUserById(userId)
-        navigate("/newuser")
-        setTimeout(() => setUpUserForm(user), 100)
+        const event = await getEventById(eventId)
+        navigate("/new-event")
+        setTimeout(() => setupEventForm(event), 100)
       } catch (err) {
-        console.error(`Error fetching user to edit: ${err}`)
+        console.error(`Error fetching event to edit: ${err}`)
       }
     })
   })
 }
 
-// CREATE & UPDATE: Formulario
-async function setUpUserForm(userData = null) {
-  const form = document.getElementById("user-form")
+// Configurar botones de inscripción para usuarios regulares
+function setupEnrollButtons() {
+  const enrollButtons = document.querySelectorAll(".btn-enroll")
+  enrollButtons.forEach((button) => {
+    button.addEventListener("click", async () => {
+      const eventId = button.dataset.id
+
+      try {
+        const event = await getEventById(eventId)
+
+        if (event.capacity <= 0) {
+          await Swal.fire({
+            icon: "warning",
+            title: "Evento lleno",
+            text: "No hay capacidad disponible para este evento",
+            confirmButtonColor: "#667eea",
+          })
+          return
+        }
+
+        // Verificar si el usuario ya está inscrito
+        const userEnrollments = getUserEnrollmentsFromStorage(currentUser.username)
+        if (userEnrollments.includes(eventId)) {
+          await Swal.fire({
+            icon: "info",
+            title: "Ya inscrito",
+            text: "Ya estás inscrito en este evento",
+            confirmButtonColor: "#667eea",
+          })
+          return
+        }
+
+        // Disminuir capacidad en 1
+        const updatedEvent = {
+          ...event,
+          capacity: event.capacity - 1,
+        }
+
+        await enrollInEvent(eventId, updatedEvent)
+
+        // Guardar inscripción del usuario en localStorage
+        saveUserEnrollment(currentUser.username, eventId)
+
+        await Swal.fire({
+          icon: "success",
+          title: "¡Inscrito!",
+          text: `Te has inscrito exitosamente en ${event.name}`,
+          timer: 1500,
+          showConfirmButton: false,
+        })
+
+        renderEvents() // Actualizar la lista de eventos
+      } catch (err) {
+        console.error(`Error enrolling in event: ${err}`)
+      }
+    })
+  })
+}
+
+// Función para guardar inscripción del usuario en localStorage
+function saveUserEnrollment(username, eventId) {
+  const enrollmentsKey = `enrollments_${username}`
+  const enrollments = JSON.parse(localStorage.getItem(enrollmentsKey) || "[]")
+
+  if (!enrollments.includes(eventId)) {
+    enrollments.push(eventId)
+    localStorage.setItem(enrollmentsKey, JSON.stringify(enrollments))
+  }
+}
+
+// Función para obtener inscripciones del usuario desde localStorage
+function getUserEnrollmentsFromStorage(username) {
+  const enrollmentsKey = `enrollments_${username}`
+  return JSON.parse(localStorage.getItem(enrollmentsKey) || "[]")
+}
+
+// Actualizar la función renderMyEvents() completamente:
+async function renderMyEvents() {
+  try {
+    // Obtener inscripciones del usuario desde localStorage
+    const userEnrollments = getUserEnrollmentsFromStorage(currentUser.username)
+    const allEvents = await getAllEvents()
+
+    // Filtrar eventos en los que el usuario está inscrito
+    const enrolledEvents = allEvents.filter((event) => userEnrollments.includes(event.id))
+
+    const contentHTML = `
+    <div class="page-header">
+      <h2>Mis Eventos</h2>
+    </div>
+    <div class="my-events-content">
+      ${
+        enrolledEvents.length > 0
+          ? `
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Fecha</th>
+                <th>Capacidad Restante</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${enrolledEvents
+                .map(
+                  (event) => `
+                <tr>
+                  <td>${event.name}</td>
+                  <td>${event.description}</td>
+                  <td>${event.date}</td>
+                  <td>${event.capacity}</td>
+                  <td><span class="status-enrolled">Inscrito</span></td>
+                </tr>
+              `,
+                )
+                .join("")}
+            </tbody>
+          </table>
+          `
+          : '<div class="no-events">No estás inscrito en ningún evento</div>'
+      }
+    </div>
+    
+    <style>
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+      }
+
+      .page-header h2 {
+        color: #333;
+        font-size: 28px;
+      }
+
+      .my-events-content {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      }
+
+      .status-enrolled {
+        background: #4CAF50;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .no-events {
+        text-align: center;
+        color: #666;
+        font-style: italic;
+        padding: 40px;
+        font-size: 18px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      th, td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+      }
+
+      th {
+        background: #f8f9fa;
+        font-weight: 600;
+        color: #333;
+      }
+
+      tr:hover {
+        background: #f8f9fa;
+      }
+    </style>
+    `
+
+    document.getElementById("content").innerHTML = contentHTML
+  } catch (err) {
+    console.error("Error getting user enrollments:", err)
+    document.getElementById("content").innerHTML = `
+      <div class="page-header">
+        <h2>Mis Eventos</h2>
+      </div>
+      <div class="error-message">Error al cargar tus eventos inscritos</div>
+    `
+  }
+}
+
+// CREATE & UPDATE: Formulario de evento
+async function setupEventForm(eventData = null) {
+  const form = document.getElementById("event-form")
   const formTitle = document.getElementById("form-title")
 
-  if (userData) {
-    formTitle.textContent = "Edit User"
-    document.getElementById("user-id").value = userData.id
-    document.getElementById("name").value = userData.name
-    document.getElementById("description").value = userData.description
-    document.getElementById("capacity").value = userData.capacity
-    document.getElementById("date").value = userData.date
+  if (eventData) {
+    formTitle.textContent = "Editar Evento"
+    document.getElementById("event-id").value = eventData.id
+    document.getElementById("name").value = eventData.name
+    document.getElementById("description").value = eventData.description
+    document.getElementById("capacity").value = eventData.capacity
+    document.getElementById("date").value = eventData.date
   } else {
-    formTitle.textContent = "New Event"
+    formTitle.textContent = "Nuevo Evento"
     form.reset()
   }
 
@@ -330,43 +632,43 @@ async function setUpUserForm(userData = null) {
   form.parentNode.replaceChild(newForm, form)
 
   // Agregar nuevo event listener
-  document.getElementById("user-form").addEventListener("submit", async (e) => {
+  document.getElementById("event-form").addEventListener("submit", async (e) => {
     e.preventDefault()
 
-    const userId = document.getElementById("user-id").value
-    const userData = {
+    const eventId = document.getElementById("event-id").value
+    const eventData = {
       name: document.getElementById("name").value,
       description: document.getElementById("description").value,
-      capacity: document.getElementById("capacity").value,
+      capacity: Number.parseInt(document.getElementById("capacity").value),
       date: document.getElementById("date").value,
     }
 
     // Validar datos
-    const validation = validateUserData(userData)
+    const validation = validateEventData(eventData)
     if (!validation.isValid) {
       await Swal.fire({
         icon: "error",
-        title: "Validation Error",
+        title: "Error de Validación",
         html: validation.errors.map((error) => `• ${error}`).join("<br>"),
         confirmButtonColor: "#667eea",
       })
       return
     }
 
-    // Si es un nuevo usuario, asignar ID secuencial
-    if (!userId) {
-      userData.id = nextUserId.toString()
+    // Si es un nuevo evento, asignar ID secuencial
+    if (!eventId) {
+      eventData.id = nextEventId.toString()
     }
 
     try {
-      if (userId) {
-        await updateUser(userId, userData)
+      if (eventId) {
+        await updateEvent(eventId, eventData)
       } else {
-        await createUser(userData)
-        nextUserId++
+        await createEvent(eventData)
+        nextEventId++
       }
 
-      navigate("/users")
+      navigate("/events")
     } catch (err) {
       console.log(`An error occurred: ${err}`)
     }
