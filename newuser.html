@@ -1,0 +1,46 @@
+<div class="form-container">
+    <h2 id="form-title">Nuevo Evento</h2>
+    <form id="event-form">
+        <input type="hidden" id="event-id">
+        
+        <div class="form-group">
+            <label for="name">Nombre</label>
+            <input type="text" id="name" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="description">Descripción</label>
+            <textarea id="description" required rows="3"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="capacity">Capacidad</label>
+            <input type="number" id="capacity" required min="1">
+        </div>
+    
+        <div class="form-group">
+            <label for="date">Fecha</label>
+            <input type="date" id="date" required>
+        </div>
+        
+        <button type="submit">Guardar Evento</button>
+    </form>
+</div>
+
+<style>
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.form-group textarea:focus {
+    outline: none;
+    border-color: #d549ff;
+}
+</style>
