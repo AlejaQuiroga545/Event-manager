@@ -1,27 +1,35 @@
 {
-  "users": [
-    {
-      "name": "Rock al parque",
-      "description": "Evento realizado en el Simón Bolívar",
-      "capacity": "20",
-      "date": "2026-12-20",
-      "id": "0"
-    }
-  ],
   "events": [
     {
-      "name": "Rock al parque",
-      "description": "Evento realizado en el Simón Bolívar",
-      "capacity": "550",
-      "date": "2000-12-12",
-      "id": "0"
+      "id": "1",
+      "name": "Workshop de JavaScript",
+      "description": "Taller práctico de JavaScript para desarrolladores",
+      "capacity": 30,
+      "date": "2024-02-20"
     },
     {
-      "name": "Farofest",
-      "description": "Fiesta de dancehall ",
-      "capacity": "780",
-      "date": "2026-12-15",
-      "id": "1"
+      "id": "0",
+      "name": "Nitrojam",
+      "description": "Pool party",
+      "capacity": 500,
+      "date": "2025-11-12"
+    },
+    {
+      "id": "0",
+      "name": "Nitrojam",
+      "description": "Pool party",
+      "capacity": 600,
+      "date": "2025-11-12"
+    }
+  ],
+  "users": [
+    {
+      "id": "eada",
+      "name": "Alejandra Quiroga",
+      "username": "aleja",
+      "password": "123",
+      "role": "user",
+      "enrolledEvents": []
     }
   ]
 }
