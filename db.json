@@ -1,0 +1,27 @@
+{
+  "users": [
+    {
+      "name": "Rock al parque",
+      "description": "Evento realizado en el Simón Bolívar",
+      "capacity": "20",
+      "date": "2026-12-20",
+      "id": "0"
+    }
+  ],
+  "events": [
+    {
+      "name": "Rock al parque",
+      "description": "Evento realizado en el Simón Bolívar",
+      "capacity": "550",
+      "date": "2000-12-12",
+      "id": "0"
+    },
+    {
+      "name": "Farofest",
+      "description": "Fiesta de dancehall ",
+      "capacity": "780",
+      "date": "2026-12-15",
+      "id": "1"
+    }
+  ]
+}
